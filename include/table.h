@@ -2,6 +2,7 @@
 #define SQUEEL_TABLE_H
 
 #include <stdint.h>
+#include "tokenizer.h"
 
 #define COLUMN_USERNAME_SIZE 32
 #define COLUMN_EMAIL_SIZE 256
@@ -11,6 +12,7 @@ typedef struct {
     char username[COLUMN_USERNAME_SIZE];
     char email[COLUMN_EMAIL_SIZE];
 } Row;
+
 
 #define TABLE_MAX_PAGES 100
 
@@ -29,5 +31,7 @@ void squeel_table_free(Table *table);
 
 uint32_t squeel_table_max_rows(void);
 uint32_t squeel_table_row_per_page(void);
+
+void row_from_statement(SqueelTokenizedStatement *statment, Row *out);
 
 #endif // SQUEEL_TABLE_H

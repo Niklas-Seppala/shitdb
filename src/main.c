@@ -9,6 +9,13 @@
 #include "table.h"
 
 
+static void cleanup(SqueelStatement *statement) {
+    if (statement->tokenized.key_values != NULL) {
+        free(statement->tokenized.key_values);
+        statement->tokenized.key_values = NULL;
+    }
+}
+
 int main(void) {
     SqueelInputBuffer *input = squeel_input_buffer_create();
     Table *table = squeel_table_create();
@@ -21,28 +28,30 @@ int main(void) {
            continue;
         }
 
-        Statement statement;
+        SqueelStatement statement;
         switch (squeel_statement_prepare(input, &statement)) {
         case STATEMENT_PREPARE_SUCCESS:
-            break;
+            break; // switch break
         case STATEMENT_PREPARE_SYNTAX_ERROR:
             printf("Syntax Error. Could not parse \"%s\"\n", input->buffer);
-            continue;
+            goto CLEAN_UP;
         case STATEMENT_PREPARE_ERROR:
+            goto CLEAN_UP;
             printf("Failed to prepare statement from \"%s\"\n", input->buffer);
-            continue;
         }
 
         switch (squeel_statement_execute(&statement, table)) {
         case EXECUTE_SUCCESS:
-            break;
+            break; // switch break
         case EXECUTE_TABLE_FULL:
             printf("[ERROR] Execute [\"%s\"] : Table is full\n", input->buffer);
-            break;
+            break; // switch break
         case EXECUTE_FAILURE:
             printf("[ERROR] Execute [\"%s\"] : Unknown error\n", input->buffer);
-            break;
+            break; // switch break
         }
+        CLEAN_UP:
+            cleanup(&statement);
     }
 
     squeel_table_free(table);

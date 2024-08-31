@@ -3,6 +3,7 @@
 
 #include "input.h"
 #include "table.h"
+#include "tokenizer.h" // TODO: for now 
 
 typedef enum {
     STATEMENT_SELECT,
@@ -11,8 +12,8 @@ typedef enum {
 
 typedef struct {
     StatementType type;
-    Row row_to_insert;
-} Statement;
+    SqueelTokenizedStatement tokenized;
+} SqueelStatement;
 
 
 typedef enum {
@@ -28,8 +29,8 @@ typedef enum {
 } StatementPrepareStatus;
 
 
-StatementPrepareStatus squeel_statement_prepare(SqueelInputBuffer *buffer, Statement *statement);
-ExecuteResult squeel_statement_execute(Statement *statement, Table *table);
+StatementPrepareStatus squeel_statement_prepare(SqueelInputBuffer *buffer, SqueelStatement *statement);
+ExecuteResult squeel_statement_execute(SqueelStatement *statement, Table *table);
 
 
 #endif // SQUEEL_STATEMENT_H

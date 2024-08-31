@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include "utils.h"
 
-#define EQ 0
 #define META_PREFIX '.'
 
 bool squeel_meta_is_meta_command(const char *command) {

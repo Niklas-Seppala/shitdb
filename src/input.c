@@ -13,7 +13,6 @@ SqueelInputBuffer *squeel_input_buffer_create(void) {
     return buffer;
 }
 
-
 // -------------------- Statics ---------------------
 static void readline_to_buffer(SqueelInputBuffer *input);
 static void squeel_input_prompt(void);
@@ -23,6 +22,20 @@ void squeel_input_buffer_close(SqueelInputBuffer *input) {
     assert(input->buffer != NULL && "buffer should not be NULL");
     free(input->buffer);
     free(input);
+}
+
+void squeel_input_buffer_copy(SqueelInputBuffer *src, SqueelInputBuffer *dest) {
+    assert(src != NULL);
+    assert(dest != NULL);
+    assert(src->input_len < src->buffer_len);
+
+    if (src->buffer_len > dest->buffer_len) {
+        dest->buffer = realloc(dest->buffer, src->buffer_len);
+    }
+    
+    dest->buffer_len = src->buffer_len;
+    dest->input_len = src->input_len;
+    strncpy(dest->buffer, src->buffer, src->input_len); // TODO: fix
 }
 
 void squeel_input_read(SqueelInputBuffer *buffer) {

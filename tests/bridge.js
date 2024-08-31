@@ -1,3 +1,4 @@
+const { fail } = require("assert");
 const { spawn } = require("child_process");
 
 /**
@@ -19,6 +20,7 @@ function executeCommands(commands) {
     });
 
     child.on("error", err => {
+      console.error(err);
       reject(err);
     });
 
@@ -44,12 +46,13 @@ function executeCommands(commands) {
  * @param {({ id: number, username: string, email: string}) => void} assert
  */
 const parseRow = (jsonRow, assert) => {
+  let row;
   try {
-    const row = JSON.parse(jsonRow);
-    assert(row);
+    row = JSON.parse(jsonRow);
   } catch (e) {
     fail(`Failed to parse row "${jsonRow}"`);
   }
+  assert(row);
 };
 
 module.exports = { executeCommands, parseRow };

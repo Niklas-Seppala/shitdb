@@ -1,8 +1,9 @@
-
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdbool.h>
 #include "table.h"
+#include "utils.h"
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
 
@@ -69,4 +70,33 @@ void *row_slot(Table *table, uint32_t row_num) {
 
 
     return (char*)page + byte_offset;
+}
+
+static bool get_uint32(const char *key, SqueelKeyValue *kv, uint32_t len, uint32_t *out) {
+    bool found = false;
+    for (uint32_t i = 0; i < len; i++) {
+        if (strcmp(kv[i].key, key) == EQ) {
+            *out = atoi(kv[i].value);
+            found = true;
+        }
+    }
+    return found;
+}
+
+static bool get_str(const char *key, SqueelKeyValue *kv, uint32_t len, char *out, uint32_t out_size) {
+    bool found = false;
+    for (uint32_t i = 0; i < len; i++) {
+        if (strcmp(kv[i].key, key) == EQ) {
+            strncpy(out, kv[i].value, out_size);
+            found = true;
+        }
+    }
+    return found;
+}
+
+void row_from_statement(SqueelTokenizedStatement *statment, Row *out) {
+    assert(get_uint32("id", statment->key_values, statment->key_values_length, &out->id));
+    assert(get_str("username", statment->key_values, statment->key_values_length, out->username, COLUMN_USERNAME_SIZE));
+    assert(get_str("email", statment->key_values, statment->key_values_length, out->email, COLUMN_EMAIL_SIZE));
+    return;
 }
