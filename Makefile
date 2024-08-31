@@ -8,54 +8,38 @@ OBJECTS=$(patsubst %.c,%.o,$(CFILES))
 DEPFILES=$(patsubst %.c,%.d,$(CFILES))
 -include $(DEPFILES)
 
-############## DEBUG BUILDS ###############
-dbg_compile: UBSAN=-fsanitize=undefined
-dbg_compile: ASAN=-fsanitize=address -static-libasan
-dbg_compile: DEBUG=-g
-dbg_compile: OPT=-O0
-dbg_compile: RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
-###########################################
+DEBUG=-g -DDEBUG
+OPT=-O0
+RT_NULL_CHECKS=-DNULL_CHECKS -DNULL_KILLS
 
 CC=gcc
 CC_WARN=-Wall -Wshadow -Wextra -Wformat=2 -Wpedantic -fmax-errors=10 -Wno-unknown-pragmas
-OPT=-O3
-CFLAGS=${CC_WARN} $(OPT) -std=gnu11 ${DEBUG} -DVEC_DEF_CAP=8 ${RT_NULL_CHECKS} $(foreach D,$(INCDIRS),-I$(D)) ${DEPFLAGS}
+CFLAGS=${CC_WARN} $(OPT) -std=gnu11 ${DEBUG} ${RT_NULL_CHECKS} $(foreach D,$(INCDIRS),-I$(D)) ${DEPFLAGS}
 
-.PHONY: all clean dbg_compile test mkdirs
+.PHONY: all clean dbg_compile test mkdirs memcheck
 
-all: mkdirs $(OUT)$(BINARY).so
+all: mkdirs $(OUT)$(BINARY)
 
 ##############################################
 #   Create shared library from object files
 ##############################################
-$(OUT)$(BINARY).so: $(OBJECTS)
-	$(CC) -shared -fPIC -o $@ $^
+$(OUT)$(BINARY): $(OBJECTS)
+	$(CC) -o $@ $^
 
 ##############################################
 #   Create object files from src dir
 ##############################################
 %.o:%.c
-	$(CC) $(CFLAGS) -c -fPIC -o $@ $< $(ASAN) $(UBSAN)
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-##############################################
-#    Create test binary
-##############################################
-$(OUT)$(BINARY).test: $(OBJECTS) test/test.o
-	$(CC) -o $@ $^ $(ASAN) $(UBSAN)
+run: all
+	@./$(OUT)${BINARY}
 
-
-dbg_compile: $(OUT)$(BINARY).test
-
-
-##############################################
-#   Compile test src
-##############################################
-
-test: dbg_compile
-	@./$(OUT)${BINARY}.test ${RUN_ARGS}
+memcheck: all
+	@valgrind --leak-check=full ./$(OUT)${BINARY}
 
 clean:
-	@rm -rf $(OUT)/* $(OUT)$(BINARY).test $(OBJECTS) test/test.o $(DEPFILES) 2>/dev/null || true
+	@rm -rf $(OUT)/* $(OUT)$(BINARY) $(OBJECTS) $(DEPFILES) 2>/dev/null || true
 
 mkdirs:
 	@mkdir -p $(OUT)
