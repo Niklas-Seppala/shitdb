@@ -41,5 +41,11 @@ memcheck: all
 clean:
 	@rm -rf $(OUT)/* $(OUT)$(BINARY) $(OBJECTS) $(DEPFILES) 2>/dev/null || true
 
+npm:
+	@(cd ./tests; npm install) > /dev/null
+
+test: all npm
+	@(cd ./tests; npm test)
+
 mkdirs:
 	@mkdir -p $(OUT)

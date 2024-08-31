@@ -1,60 +1,51 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdbool.h>
+#include <assert.h>
 
-#define EQ 0
-#define CMD_EXIT "exit"
+#include "input.h"
+#include "meta.h"
+#include "statement.h"
+#include "table.h"
 
-typedef struct {
-    char *buffer;
-    size_t buffer_len;
-    size_t input_len;
-} SQUEEL_InputBuffer;
-
-SQUEEL_InputBuffer *SQEEL_InputBuffer_create() {
-    SQUEEL_InputBuffer *buffer = malloc(sizeof(*buffer));
-    buffer->buffer = NULL;
-    buffer->buffer_len = 0;
-    buffer->input_len = 0;
-    return buffer;
-}
-
-void SQEEL_InputBuffer_close(SQUEEL_InputBuffer *buffer) {
-    if (buffer->buffer != NULL) {
-        free(buffer->buffer);
-    }
-    free(buffer);
-}
-
-static void read_input(SQUEEL_InputBuffer *buffer) {
-    ssize_t n = getline(&buffer->buffer, &buffer->buffer_len, stdin);
-    if (n == -1) {
-        perror("Failed to read input line");
-    }
-    buffer->input_len = n-1;
-    buffer->buffer[buffer->input_len] = '\0';
-#ifdef DEBUG
-    printf("INPUT:\"%s\" LEN:%ld\n", buffer->buffer, buffer->input_len);
-#endif
-}
-
-static void prompt_blocks(SQUEEL_InputBuffer *buffer) {
-    printf("squeel > ");
-    read_input(buffer);
-}
 
 int main(void) {
-    SQUEEL_InputBuffer *buffer = SQEEL_InputBuffer_create();
-    while (true) {
-        prompt_blocks(buffer);
+    SqueelInputBuffer *input = squeel_input_buffer_create();
+    Table *table = squeel_table_create();
 
-        // Process input
-        if (strncmp(CMD_EXIT, buffer->buffer, buffer->input_len) == EQ) {
-            printf("Goodbye\n");
+    while (true) {
+        squeel_input_read(input);
+
+        if (squeel_meta_is_meta_command(input->buffer)) {
+           squeel_meta_handle_command(input);
+           continue;
+        }
+
+        Statement statement;
+        switch (squeel_statement_prepare(input, &statement)) {
+        case STATEMENT_PREPARE_SUCCESS:
+            break;
+        case STATEMENT_PREPARE_SYNTAX_ERROR:
+            printf("Syntax Error. Could not parse \"%s\"\n", input->buffer);
+            continue;
+        case STATEMENT_PREPARE_ERROR:
+            printf("Failed to prepare statement from \"%s\"\n", input->buffer);
+            continue;
+        }
+
+        switch (squeel_statement_execute(&statement, table)) {
+        case EXECUTE_SUCCESS:
+            break;
+        case EXECUTE_TABLE_FULL:
+            printf("[ERROR] Execute [\"%s\"] : Table is full\n", input->buffer);
+            break;
+        case EXECUTE_FAILURE:
+            printf("[ERROR] Execute [\"%s\"] : Unknown error\n", input->buffer);
             break;
         }
     }
-    SQEEL_InputBuffer_close(buffer);
+
+    squeel_table_free(table);
+    squeel_input_buffer_close(input);
     return EXIT_SUCCESS;
 }
