@@ -33,12 +33,12 @@ StatementPrepareStatus squeel_statement_prepare(SqueelInputBuffer *input, Squeel
     return STATEMENT_PREPARE_SUCCESS;
 } 
 
-ExecuteResult squeel_insert_execute(SqueelStatement *statement, Table *table) {
+ExecuteResult squeel_insert_execute(SqueelStatement *statement, SqueelTable *table) {
 
     if (table->num_rows >= squeel_table_max_rows()) {
         return EXECUTE_TABLE_FULL;
     }
-    Row row_to_insert;
+    SqueelRow row_to_insert;
     row_from_statement(&statement->tokenized, &row_to_insert);
     squeel_serialize_row(&row_to_insert, row_slot(table, table->num_rows));
     table->num_rows++;
@@ -46,13 +46,13 @@ ExecuteResult squeel_insert_execute(SqueelStatement *statement, Table *table) {
     return EXECUTE_SUCCESS;
 } 
 
-void print_row(Row *row) {
+void print_row(SqueelRow *row) {
     printf("{ \"id\": %u, \"username\": \"%s\", \"email\": \"%s\" }\n", row->id, row->username, row->email);
 }
 
-ExecuteResult squeel_select_execute(SqueelStatement *statement, Table *table) {
+ExecuteResult squeel_select_execute(SqueelStatement *statement, SqueelTable *table) {
     UNUSED(statement);
-    Row row;
+    SqueelRow row;
     for (uint32_t i = 0; i < table->num_rows; i++) {
         squeel_deserialize_row(row_slot(table, i), &row);
         print_row(&row);
@@ -60,7 +60,7 @@ ExecuteResult squeel_select_execute(SqueelStatement *statement, Table *table) {
     return EXECUTE_SUCCESS;
 } 
 
-ExecuteResult squeel_statement_execute(SqueelStatement *statement, Table *table) {
+ExecuteResult squeel_statement_execute(SqueelStatement *statement, SqueelTable *table) {
     switch (statement->type)
     {
     case STATEMENT_INSERT:

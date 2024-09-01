@@ -16,19 +16,27 @@ static void cleanup(SqueelStatement *statement) {
     }
 }
 
-int main(void) {
+int main(const int argc, const char** argv) {
+
+    if (argc < 2) {
+        printf("Missing database filename");
+        exit(EXIT_FAILURE);
+    }
+
+    const char *db_filename = argv[1];
+
     SqueelInputBuffer *input = squeel_input_buffer_create();
-    Table *table = squeel_table_create();
+    SqueelTable *table = squeel_db_open(db_filename);
 
     while (true) {
         squeel_input_read(input);
 
         if (squeel_meta_is_meta_command(input->buffer)) {
-           squeel_meta_handle_command(input);
+           squeel_meta_handle_command(input, table);
            continue;
         }
 
-        SqueelStatement statement;
+        SqueelStatement statement = {0};
         switch (squeel_statement_prepare(input, &statement)) {
         case STATEMENT_PREPARE_SUCCESS:
             break; // switch break
@@ -54,7 +62,7 @@ int main(void) {
             cleanup(&statement);
     }
 
-    squeel_table_free(table);
+    squeel_db_close(table);
     squeel_input_buffer_close(input);
     return EXIT_SUCCESS;
 }

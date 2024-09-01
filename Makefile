@@ -19,7 +19,7 @@ CC=gcc
 CC_WARN=-Wall -Wshadow -Wextra -Werror -Wformat=2 -Wpedantic -fmax-errors=10 -Wno-unknown-pragmas
 CFLAGS=${CC_WARN} $(OPT) -std=gnu11 ${DEBUG} $(foreach D,$(INCDIRS),-I$(D)) ${DEPFLAGS}
 
-.PHONY: all clean dbg_compile test mkdirs memcheck run
+.PHONY: all clean testclean dbg_compile test mkdirs memcheck run
 
 all: mkdirs $(OUT)$(BINARY)
 
@@ -37,12 +37,12 @@ $(OUT)%.o: %.c
 	$(CC) $(CFLAGS) $(ASAN) -c -o $@ $<
 
 run: all
-	./$(OUT)${BINARY}
+	./$(OUT)${BINARY} ./$(OUT)squeel.db
 
 memcheck: all
 	valgrind --leak-check=full ./$(OUT)${BINARY}
 
-clean:
+clean: testclean
 	@rm -rf $(OUT) $(OBJECTS) $(DEPFILES) 2>/dev/null || true
 
 npm:
@@ -50,6 +50,9 @@ npm:
 
 test: all npm
 	@(cd ./tests; npm test)
+
+testclean:
+	@rm -rf tests/$(OUT)
 
 mkdirs:
 	@mkdir -p $(OUT)

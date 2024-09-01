@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "input.h"
+#include "table.h"
 
 #define CMD_EXIT ".exit"
 enum SqueelMetaCommand {
@@ -10,8 +11,9 @@ enum SqueelMetaCommand {
     UNRECOGNICED
 };
 
+
 bool squeel_meta_is_meta_command(const char *command);
-void squeel_meta_handle_command(SqueelInputBuffer *input);
+void squeel_meta_handle_command(SqueelInputBuffer *input, SqueelTable *table);
 
 
 #endif // SQUEEL_META_H

@@ -1,14 +1,34 @@
 const { fail } = require("assert");
 const { spawn } = require("child_process");
+const { rmSync, existsSync, mkdirSync, unlinkSync } = require("fs")
+
+const dbDir = "out/test/"
+
+/**
+ * @param {string} suiteName
+ * @param {string} caseName
+ * @returns {string} dir
+ */
+function getDbPath(suiteName, caseName) {
+  const dbPath = dbDir + suiteName + "/" + caseName + ".db";
+  if (existsSync(dbPath)) {
+    unlinkSync(dbPath);
+  } else {
+    mkdirSync(dbDir + suiteName, {recursive: true});
+  }
+  return dbPath;
+}
 
 /**
  * @param {[string]} commands 
+ * @param {string|null} file
  * @returns {Promise<[string]>} JSON rows
  */
-function executeCommands(commands) {
+function executeCommands(commands, file) {
   return new Promise((resolve, reject) => {
     let rawOutput = "";
-    const child = spawn("../out/squeel");
+    let rawError = "";
+    const child = spawn("../out/squeel", [file]);
 
     commands.forEach(command => {
       child.stdin.write(`${command}\n`);
@@ -19,6 +39,10 @@ function executeCommands(commands) {
       rawOutput += data.toString();
     });
 
+    child.stderr.on("data", data => {
+      rawError += data.toString();
+    });
+
     child.on("error", err => {
       console.error(err);
       reject(err);
@@ -27,6 +51,7 @@ function executeCommands(commands) {
     // Resolve when the process exits and all output has been read
     child.on("close", code => {
       if (code !== 0) {
+        console.error(rawError)
         reject(new Error(`Process exited with code ${code}`));
       } else {
         resolve(
@@ -35,6 +60,8 @@ function executeCommands(commands) {
             .replaceAll("Goodbye", "")
             .split("\n")
             .filter(it => it.length > 0)
+            .filter(it => !it.includes("[CREATE]"))
+            .filter(it => !it.includes("[OPEN]"))
         );
       }
     });
@@ -55,4 +82,4 @@ const parseRow = (jsonRow, assert) => {
   assert(row);
 };
 
-module.exports = { executeCommands, parseRow };
+module.exports = { executeCommands, parseRow, getDbPath };

@@ -30,7 +30,7 @@ typedef enum {
 
 
 StatementPrepareStatus squeel_statement_prepare(SqueelInputBuffer *buffer, SqueelStatement *statement);
-ExecuteResult squeel_statement_execute(SqueelStatement *statement, Table *table);
+ExecuteResult squeel_statement_execute(SqueelStatement *statement, SqueelTable *table);
 
 
 #endif // SQUEEL_STATEMENT_H

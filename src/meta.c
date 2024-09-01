@@ -17,10 +17,11 @@ static enum SqueelMetaCommand parse_meta(SqueelInputBuffer *input) {
     return UNRECOGNICED;
 }
 
-void squeel_meta_handle_command(SqueelInputBuffer *input) {
+void squeel_meta_handle_command(SqueelInputBuffer *input, SqueelTable *table) {
     switch (parse_meta(input))
     {
     case EXIT:
+        squeel_db_close(table);
         printf("Goodbye\n");
         exit(EXIT_SUCCESS);
     case UNRECOGNICED:

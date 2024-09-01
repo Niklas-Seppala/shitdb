@@ -12,6 +12,8 @@ typedef enum {
 
 typedef enum {
     TOKENIZATION_SUCCESS,
+    TOKENIZATION_TOO_LONG,
+    TOKENIZATION_NEGATIVE_INTEGER,
     TOKENIZATION_FAILURE
 } SqueelTokenizationResult;
 

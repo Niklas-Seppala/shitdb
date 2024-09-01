@@ -58,6 +58,7 @@ static SqueelTokenizationResult tokenize_insert(SqueelTokenizedStatement *out) {
         bool key_found = false;
         for (uint32_t i = 0; i < out->key_values_length; i++) {
             if (strcmp(out->key_values[i].key, left) == EQ) {
+                // TODO: check for lenght
                 strncpy(out->key_values[i].value, right, MAX_VALUE_SIZE); // TODO: fix 
                 key_found = true;
                 count++;
