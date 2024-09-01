@@ -10,7 +10,7 @@ static const char *ASSIGN     = "=";
 static const char *INSERT_STR = "INSERT";
 static const char *SELECT_STR = "SELECT";
 
-static SqueelOperationToken tokenize_keywork(SqueelInputBuffer *input) {
+static SDBOperationToken tokenize_keywork(SDBInputBuffer *input) {
     const char *keyword = strtok(input->buffer, SPACE);
     if (strcasecmp(keyword, INSERT_STR) == EQ) {
         return INSERT_TOKEN;
@@ -29,7 +29,7 @@ static int get_index_of_char(const char *str, char c) {
     return -1;
 }
 
-static void get_things_somehow(SqueelTokenizedStatement *out, const char *table_name) {
+static void get_things_somehow(SDBTokenizedStatement *out, const char *table_name) {
     ((void)table_name);
     out->key_values = calloc(3, sizeof(*out->key_values));
     out->key_values_length = 3;
@@ -39,7 +39,7 @@ static void get_things_somehow(SqueelTokenizedStatement *out, const char *table_
     strcpy(out->key_values[2].key, "email");
 }
 
-static SqueelTokenizationResult tokenize_insert(SqueelTokenizedStatement *out) {
+static SDBTokenizationResult tokenize_insert(SDBTokenizedStatement *out) {
     get_things_somehow(out, "user");
 
     char *token = NULL;
@@ -78,13 +78,13 @@ static SqueelTokenizationResult tokenize_insert(SqueelTokenizedStatement *out) {
     return TOKENIZATION_SUCCESS;
 }
 
-static SqueelTokenizationResult tokenize_select(SqueelTokenizedStatement *statement) {
+static SDBTokenizationResult tokenize_select(SDBTokenizedStatement *statement) {
     UNUSED(statement);
     return TOKENIZATION_SUCCESS; // TODO
 }
 
-SqueelTokenizationResult tokenize(SqueelInputBuffer *input, SqueelTokenizedStatement *statement) {
-    const SqueelOperationToken keyword = tokenize_keywork(input);
+SDBTokenizationResult tokenize(SDBInputBuffer *input, SDBTokenizedStatement *statement) {
+    const SDBOperationToken keyword = tokenize_keywork(input);
     statement->keyword = keyword;
     switch (keyword)
     {

@@ -28,7 +28,7 @@ function executeCommands(commands, file) {
   return new Promise((resolve, reject) => {
     let rawOutput = "";
     let rawError = "";
-    const child = spawn("../out/squeel", [file]);
+    const child = spawn("../out/sdb", [file]);
 
     commands.forEach(command => {
       child.stdin.write(`${command}\n`);
@@ -56,7 +56,7 @@ function executeCommands(commands, file) {
       } else {
         resolve(
           rawOutput
-            .replaceAll("squeel-db > ", "")
+            .replaceAll("sdb > ", "")
             .replaceAll("Goodbye", "")
             .split("\n")
             .filter(it => it.length > 0)

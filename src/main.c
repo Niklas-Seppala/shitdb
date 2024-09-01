@@ -9,7 +9,7 @@
 #include "table.h"
 
 
-static void cleanup(SqueelStatement *statement) {
+static void cleanup(SDBStatement *statement) {
     if (statement->tokenized.key_values != NULL) {
         free(statement->tokenized.key_values);
         statement->tokenized.key_values = NULL;
@@ -25,19 +25,19 @@ int main(const int argc, const char** argv) {
 
     const char *db_filename = argv[1];
 
-    SqueelInputBuffer *input = squeel_input_buffer_create();
-    SqueelTable *table = squeel_db_open(db_filename);
+    SDBInputBuffer *input = sdb_input_buffer_create();
+    SDBTable *table = sdb_open(db_filename);
 
     while (true) {
-        squeel_input_read(input);
+        sdb_input_read(input);
 
-        if (squeel_meta_is_meta_command(input->buffer)) {
-           squeel_meta_handle_command(input, table);
+        if (sdb_meta_is_meta_command(input->buffer)) {
+           sdb_meta_handle_command(input, table);
            continue;
         }
 
-        SqueelStatement statement = {0};
-        switch (squeel_statement_prepare(input, &statement)) {
+        SDBStatement statement = {0};
+        switch (sdb_statement_prepare(input, &statement)) {
         case STATEMENT_PREPARE_SUCCESS:
             break; // switch break
         case STATEMENT_PREPARE_SYNTAX_ERROR:
@@ -48,11 +48,14 @@ int main(const int argc, const char** argv) {
             printf("Failed to prepare statement from \"%s\"\n", input->buffer);
         }
 
-        switch (squeel_statement_execute(&statement, table)) {
+        switch (sdb_statement_execute(&statement, table)) {
         case EXECUTE_SUCCESS:
             break; // switch break
         case EXECUTE_TABLE_FULL:
             printf("[ERROR] Execute [\"%s\"] : Table is full\n", input->buffer);
+            break; // switch break
+        case EXECUTE_DUP_KEY:
+            printf("[ERROR] Execute [\"%s\"] : Duplicate key\n", input->buffer);
             break; // switch break
         case EXECUTE_FAILURE:
             printf("[ERROR] Execute [\"%s\"] : Unknown error\n", input->buffer);
@@ -62,7 +65,7 @@ int main(const int argc, const char** argv) {
             cleanup(&statement);
     }
 
-    squeel_db_close(table);
-    squeel_input_buffer_close(input);
+    sdb_close(table);
+    sdb_input_buffer_close(input);
     return EXIT_SUCCESS;
 }

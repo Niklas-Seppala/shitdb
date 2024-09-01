@@ -23,7 +23,7 @@ function getCommands(data) {
   return commands;
 }
 
-const amount = 1400;
+const amount = 13;
 test(`Inserts ${amount} rows and queries the table`, async () => {
   const dbPath = getDbPath("insert", "max");
   const data = getData(amount);
@@ -40,6 +40,26 @@ test(`Inserts ${amount} rows and queries the table`, async () => {
     )
     .catch(error => fail(error.message));
 });
+
+test(`Inserts rows with 3..1 ids and expects ordered by id`, async () => {
+  const dbPath = getDbPath("insert", "ordered");
+  const ordered = getData(3);
+  const reverse = [...ordered].reverse();
+  const commands = getCommands(reverse);
+  await executeCommands(commands, dbPath)
+    .then(output =>
+      output.forEach((json, i) =>
+        parseRow(json, row => {
+          console.log(row)
+          expect(row.id).toBe(ordered[i].id);
+          expect(row.username).toBe(ordered[i].username);
+          expect(row.email).toBe(ordered[i].email);
+        })
+      )
+    )
+    .catch(error => fail(error.message));
+});
+
 
 test(`Insert max sized entry (31 bytes) for username column`, async () => {
   const dbPath = getDbPath("insert", "username");

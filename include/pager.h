@@ -1,5 +1,5 @@
-#if !defined(SQUEEL_PAGER_H)
-#define SQUEEL_PAGER_H
+#if !defined(SDB_PAGER_H)
+#define SDB_PAGER_H
 
 #include <inttypes.h>
 #define TABLE_MAX_PAGES 100
@@ -8,14 +8,15 @@
 typedef struct {
     int fd;
     uint32_t f_size;
+    uint32_t num_pages;
     void *pages[TABLE_MAX_PAGES];
-} SqueelPager;
+} SDBPager;
 
 
-SqueelPager *squeel_pager_open(const char *filename);
+SDBPager *sdb_pager_open(const char *filename);
 
-void *squeel_get_page(SqueelPager *pager, uint32_t page_num);
+void *sdb_get_page(SDBPager *pager, uint32_t page_num);
 
-void squeel_pager_flush(SqueelPager *pager, uint32_t page_num, uint32_t nBytes);
+void sdb_pager_flush(SDBPager *pager, uint32_t page_num);
 
-#endif // SQUEEL_PAGER_H
+#endif // SDB_PAGER_H

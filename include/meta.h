@@ -1,19 +1,18 @@
-#if !defined(SQUEEL_META_H)
-#define SQUEEL_META_H
+#if !defined(SDB_META_H)
+#define SDB_META_H
 
 #include <stdbool.h>
 #include "input.h"
 #include "table.h"
 
-#define CMD_EXIT ".exit"
-enum SqueelMetaCommand {
+enum SDBMetaCommand {
     EXIT,            // CMD_EXIT
+    BTREE,           // CMD_BTREE
+    CONST,           // CMD_CONST
     UNRECOGNICED
 };
 
+bool sdb_meta_is_meta_command(const char *command);
+void sdb_meta_handle_command(SDBInputBuffer *input, SDBTable *table);
 
-bool squeel_meta_is_meta_command(const char *command);
-void squeel_meta_handle_command(SqueelInputBuffer *input, SqueelTable *table);
-
-
-#endif // SQUEEL_META_H
+#endif // SDB_META_H

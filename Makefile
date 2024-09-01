@@ -1,4 +1,4 @@
-BINARY=squeel
+BINARY=sdb
 OUT=out/
 CODEDIRS=. src
 INCDIRS=./include/
@@ -7,8 +7,12 @@ DEPFLAGS=-MP -MD
 CFILES=$(foreach D,$(CODEDIRS),$(wildcard $(D)/*.c))
 OBJECTS=$(patsubst %,$(OUT)%,$(CFILES:.c=.o))
 DEPFILES=$(patsubst %,$(OUT)%,$(CFILES:.c=.d))
-#ASAN=-fsanitize=address
-ASAN=
+ASAN=-fsanitize=address
+#ASAN=
+
+insert id=3 username=name-3 email=email-3
+insert id=2 username=name-2 email=email-2
+insert id=1 username=name-1 email=email-1
 
 -include $(DEPFILES)
 
@@ -37,7 +41,7 @@ $(OUT)%.o: %.c
 	$(CC) $(CFLAGS) $(ASAN) -c -o $@ $<
 
 run: all
-	./$(OUT)${BINARY} ./$(OUT)squeel.db
+	./$(OUT)${BINARY} ./$(OUT)sdb.db
 
 memcheck: all
 	valgrind --leak-check=full ./$(OUT)${BINARY}

@@ -1,5 +1,5 @@
-#if !defined(SQUEEL_TABLE_H)
-#define SQUEEL_TABLE_H
+#if !defined(SDB_TABLE_H)
+#define SDB_TABLE_H
 
 #include <stdint.h>
 #include "tokenizer.h"
@@ -12,28 +12,24 @@ typedef struct {
     uint32_t id;
     char username[COLUMN_USERNAME_SIZE];
     char email[COLUMN_EMAIL_SIZE];
-} SqueelRow;
+} SDBRow;
 
 
 #define TABLE_MAX_PAGES 100
 
 typedef struct {
-    uint32_t num_rows;
-    //void *pages[TABLE_MAX_PAGES];
-    SqueelPager *pager;
-} SqueelTable;
+    SDBPager *pager;
+    uint32_t root_page_num;
+} SDBTable;
 
 
-void squeel_serialize_row(SqueelRow *src, void *dest);
-void squeel_deserialize_row(void *src, SqueelRow *dest);
-void *row_slot(SqueelTable *table, uint32_t row_num);
+void sdb_serialize_row(SDBRow *src, void *dest);
+void sdb_deserialize_row(void *src, SDBRow *dest);
+SDBTable *sdb_open(const char *db_filename);
+void sdb_close(SDBTable *table);
+uint32_t sdb_table_max_rows(void);
+uint32_t sdb_table_row_per_page(void);
+uint32_t sdb_row_size(void);
+void sdb_row_from_statement(SDBTokenizedStatement *statment, SDBRow *out);
 
-SqueelTable *squeel_db_open(const char *db_filename);
-void squeel_db_close(SqueelTable *table);
-
-uint32_t squeel_table_max_rows(void);
-uint32_t squeel_table_row_per_page(void);
-
-void row_from_statement(SqueelTokenizedStatement *statment, SqueelRow *out);
-
-#endif // SQUEEL_TABLE_H
+#endif // SDB_TABLE_H

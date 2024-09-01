@@ -1,5 +1,5 @@
-#if !defined(SQUEEL_STATEMENT_H)
-#define SQUEEL_STATEMENT_H
+#if !defined(SDB_STATEMENT_H)
+#define SDB_STATEMENT_H
 
 #include "input.h"
 #include "table.h"
@@ -12,12 +12,13 @@ typedef enum {
 
 typedef struct {
     StatementType type;
-    SqueelTokenizedStatement tokenized;
-} SqueelStatement;
+    SDBTokenizedStatement tokenized;
+} SDBStatement;
 
 
 typedef enum {
     EXECUTE_TABLE_FULL,
+    EXECUTE_DUP_KEY,
     EXECUTE_SUCCESS,
     EXECUTE_FAILURE
 } ExecuteResult;
@@ -29,8 +30,8 @@ typedef enum {
 } StatementPrepareStatus;
 
 
-StatementPrepareStatus squeel_statement_prepare(SqueelInputBuffer *buffer, SqueelStatement *statement);
-ExecuteResult squeel_statement_execute(SqueelStatement *statement, SqueelTable *table);
+StatementPrepareStatus sdb_statement_prepare(SDBInputBuffer *buffer, SDBStatement *statement);
+ExecuteResult sdb_statement_execute(SDBStatement *statement, SDBTable *table);
 
 
-#endif // SQUEEL_STATEMENT_H
+#endif // SDB_STATEMENT_H

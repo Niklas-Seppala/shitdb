@@ -3,27 +3,46 @@
 #include <assert.h>
 #include <string.h>
 #include "utils.h"
+#include "trees.h"
+#include "pager.h"
 
-#define META_PREFIX '.'
+#define META_PREFIX   '.'
+#define CMD_EXIT      ".exit"
+#define CMD_BTREE     ".btree"
+#define CMD_CONST     ".const"
 
-bool squeel_meta_is_meta_command(const char *command) {
+bool sdb_meta_is_meta_command(const char *command) {
     return command[0] == META_PREFIX;
 }
 
-static enum SqueelMetaCommand parse_meta(SqueelInputBuffer *input) {
+static enum SDBMetaCommand parse_meta(SDBInputBuffer *input) {
     if (strncasecmp(CMD_EXIT, input->buffer, input->input_len) == EQ) {
        return EXIT;
+    }
+    if (strncasecmp(CMD_BTREE, input->buffer, input->input_len) == EQ) {
+       return BTREE;
+    }
+    if (strncasecmp(CMD_CONST, input->buffer, input->input_len) == EQ) {
+       return CONST;
     }
     return UNRECOGNICED;
 }
 
-void squeel_meta_handle_command(SqueelInputBuffer *input, SqueelTable *table) {
+void sdb_meta_handle_command(SDBInputBuffer *input, SDBTable *table) {
     switch (parse_meta(input))
     {
     case EXIT:
-        squeel_db_close(table);
+        sdb_close(table);
         printf("Goodbye\n");
         exit(EXIT_SUCCESS);
+    case BTREE:
+        printf("Tree:\n");
+        print_leaf_node(sdb_get_page(table->pager, 0));
+        break;
+    case CONST:
+        printf("Constants:\n");
+        print_constants();
+        break;
     case UNRECOGNICED:
         printf("Unrecognized command \"%s\"\n", input->buffer);
         break;

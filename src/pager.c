@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <unistd.h>
 
-SqueelPager *squeel_pager_open(const char *filename) {
+SDBPager *sdb_pager_open(const char *filename) {
     if (access(filename, F_OK) == 0) {
         printf("[OPEN] database %s\n", filename);
     } else {
@@ -18,9 +18,16 @@ SqueelPager *squeel_pager_open(const char *filename) {
         exit(EXIT_FAILURE);
     }
 
-    SqueelPager *pager = calloc(1, sizeof(*pager));
+    SDBPager *pager = calloc(1, sizeof(*pager));
     pager->fd = fd;
-    pager->f_size = lseek(fd, 0, SEEK_END);;
+    off_t file_length = lseek(fd, 0, SEEK_END);;
+    pager->f_size = file_length;
+    pager->num_pages = (file_length / PAGE_SIZE);
+
+    if (file_length % PAGE_SIZE != 0) {
+        printf("Db file is not a whole number of pages. Corrupt file.\n");
+        exit(EXIT_FAILURE);
+    }
     
     for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
         pager->pages[i] = NULL;
@@ -28,7 +35,7 @@ SqueelPager *squeel_pager_open(const char *filename) {
     return pager;
 }
 
-void *squeel_get_page(SqueelPager *pager, uint32_t page_num) {
+void *sdb_get_page(SDBPager *pager, uint32_t page_num) {
     if (page_num > TABLE_MAX_PAGES) {
         printf("Tried to fetch a page %d outside of bounds (%d)\n", page_num, TABLE_MAX_PAGES);
         exit(EXIT_FAILURE);
@@ -52,13 +59,17 @@ void *squeel_get_page(SqueelPager *pager, uint32_t page_num) {
             }
         }
         pager->pages[page_num] = page;
+
+        if (page_num >= pager->num_pages) {
+            pager->num_pages++;
+        }
     }
 
     return pager->pages[page_num];
 }
 
 
-void squeel_pager_flush(SqueelPager *pager, uint32_t page_num, uint32_t nBytes) {
+void sdb_pager_flush(SDBPager *pager, uint32_t page_num) {
     assert(pager != NULL);
 
     if (pager->pages[page_num] == NULL) {
@@ -72,7 +83,7 @@ void squeel_pager_flush(SqueelPager *pager, uint32_t page_num, uint32_t nBytes) 
         exit(EXIT_FAILURE);
     }
 
-    ssize_t bytes_written = write(pager->fd, pager->pages[page_num], nBytes);
+    ssize_t bytes_written = write(pager->fd, pager->pages[page_num], PAGE_SIZE);
     if (bytes_written == -1) {
         perror("[ERROR] flushing the page");
         exit(EXIT_FAILURE);
