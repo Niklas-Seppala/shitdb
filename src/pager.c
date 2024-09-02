@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
+#include "trees.h"
 
 SDBPager *sdb_pager_open(const char *filename) {
     if (access(filename, F_OK) == 0) {

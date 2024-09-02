@@ -2,8 +2,7 @@
 #define SDB_PAGER_H
 
 #include <inttypes.h>
-#define TABLE_MAX_PAGES 100
-#define PAGE_SIZE ((uint32_t)4096)
+#include "trees.h"
 
 typedef struct {
     int fd;

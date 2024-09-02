@@ -50,7 +50,6 @@ test(`Inserts rows with 3..1 ids and expects ordered by id`, async () => {
     .then(output =>
       output.forEach((json, i) =>
         parseRow(json, row => {
-          console.log(row)
           expect(row.id).toBe(ordered[i].id);
           expect(row.username).toBe(ordered[i].username);
           expect(row.email).toBe(ordered[i].email);

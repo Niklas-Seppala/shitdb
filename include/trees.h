@@ -1,22 +1,47 @@
 #if !defined(SDB_TREES_H)
 #define SDB_TREES_H
 
-typedef enum {
-    TREE_NODE_INTERNAL,
-    TREE_NODE_LEAF
-} SDBNodeType;
+#include "tableconsts.h"
 
-uint32_t leaf_node_max_cells(void);
-uint32_t leaf_node_cell_size(void);
-uint32_t* leaf_node_num_cells(void* node);
-void* leaf_node_cell(void* node, uint32_t cell_num);
-uint32_t* leaf_node_key(void* node, uint32_t cell_num);
-void* leaf_node_value(void* node, uint32_t cell_num);
-void initialize_leaf_node(void* node);
-void print_leaf_node(void* node);
+#define SDB_LEAF_NODE (1 << 0)
+#define SDB_INTERNAL_NODE (1 << 1)
+#define SDB_ROOT_NODE (1 << 2)
+
+typedef uint8_t SDBNodeType;
+
+typedef struct {
+    SDBNodeType type;
+    uint32_t parent_ptr;
+} SDBGenericNode;
+
+typedef struct {
+    SDBGenericNode header;
+} SDBInternalNode;
+
+typedef struct {
+    uint32_t num_cells;
+} SDBLeafHeader;
+
+typedef struct {
+    uint32_t key;
+    char value[ROW_SIZE];
+} SDBCell;
+
+#define LEAF_NODE_CELL_SIZE ((uint32_t)(sizeof(SDBCell)))
+#define LEAF_NODE_SPACE_FOR_CELLS ((uint32_t)(PAGE_SIZE - ((sizeof(SDBGenericNode) + sizeof(SDBLeafHeader)))))
+#define LEAF_NODE_MAX_CELLS ((uint32_t)(LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE))
+
+typedef struct {
+    SDBCell cells[LEAF_NODE_MAX_CELLS];
+} SDBLeafBody;
+
+typedef struct {
+    SDBGenericNode common_header;
+    SDBLeafHeader leaf_header;
+    SDBLeafBody body;
+} SDBLeafNode;
+
+void print_leaf_node(SDBGenericNode* node);
 void print_constants(void);
-SDBNodeType get_node_type(void* node);
-void set_node_type(void* node, SDBNodeType type);
-
 
 #endif // SDB_TREES_H

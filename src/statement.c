@@ -4,16 +4,19 @@
 #include "utils.h"
 #include "table.h"
 #include "cursor.h"
+#include <assert.h>
 #include "trees.h"
 
 // TODO: might be nice to free this at the end :)
 static SDBInputBuffer *input_copy = NULL; 
 
 void leaf_node_insert(SDBCursor* cursor, uint32_t key, SDBRow* value) {
-    void* node = sdb_get_page(cursor->table->pager, cursor->page_num);
+    SDBGenericNode* page = sdb_get_page(cursor->table->pager, cursor->page_num);
+    assert(page->type & SDB_LEAF_NODE && "Only feal nodes for now");
+    SDBLeafNode *node = (SDBLeafNode*) page;
 
-    uint32_t num_cells = *leaf_node_num_cells(node);
-    if (num_cells >= leaf_node_max_cells()) {
+    uint32_t num_cells = node->leaf_header.num_cells;
+    if (num_cells >= LEAF_NODE_MAX_CELLS) {
         // Node full
         printf("Need to implement splitting a leaf node.\n");
         exit(EXIT_FAILURE);
@@ -22,13 +25,14 @@ void leaf_node_insert(SDBCursor* cursor, uint32_t key, SDBRow* value) {
     if (cursor->cell_num < num_cells) {
         // Make room for new cell
         for (uint32_t i = num_cells; i > cursor->cell_num; i--) {
-            memcpy(leaf_node_cell(node, i), leaf_node_cell(node, i - 1), leaf_node_cell_size());
+            memcpy(&node->body.cells[i], &node->body.cells[i-1], LEAF_NODE_CELL_SIZE);
         }
     }
 
-    *(leaf_node_num_cells(node)) += 1;
-    *(leaf_node_key(node, cursor->cell_num)) = key;
-    sdb_serialize_row(value, leaf_node_value(node, cursor->cell_num));
+    node->leaf_header.num_cells++;
+    node->body.cells[cursor->cell_num].key = key;
+    char *dest = node->body.cells[cursor->cell_num].value;
+    sdb_serialize_row(value, dest);
 }
 
 
@@ -59,9 +63,12 @@ StatementPrepareStatus sdb_statement_prepare(SDBInputBuffer *input, SDBStatement
 }
 
 ExecuteResult sdb_insert_execute(SDBStatement *statement, SDBTable *table) {
-    void* node = sdb_get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(node);
-    if (num_cells >= leaf_node_max_cells()) {
+    SDBGenericNode* page = sdb_get_page(table->pager, table->root_page_num);
+    assert(page->type & SDB_LEAF_NODE);
+    SDBLeafNode *node = (SDBLeafNode *)page;
+
+    uint32_t num_cells = node->leaf_header.num_cells;
+    if (num_cells >= LEAF_NODE_MAX_CELLS) {
         return EXECUTE_TABLE_FULL;
     }
 
@@ -73,7 +80,7 @@ ExecuteResult sdb_insert_execute(SDBStatement *statement, SDBTable *table) {
     sdb_cursor_find(&cursor, table, key);
 
     if (cursor.cell_num < num_cells) {
-        uint32_t key_at = *leaf_node_key(node, cursor.cell_num);
+        uint32_t key_at = node->body.cells[cursor.cell_num].key;
         if (key_at == key) {
             return EXECUTE_DUP_KEY;
         }

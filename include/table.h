@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include "tokenizer.h"
 #include "pager.h"
-
-#define COLUMN_USERNAME_SIZE 32
-#define COLUMN_EMAIL_SIZE 256
+#include "tableconsts.h"
 
 typedef struct {
     uint32_t id;
@@ -15,7 +13,6 @@ typedef struct {
 } SDBRow;
 
 
-#define TABLE_MAX_PAGES 100
 
 typedef struct {
     SDBPager *pager;
@@ -23,8 +20,8 @@ typedef struct {
 } SDBTable;
 
 
-void sdb_serialize_row(SDBRow *src, void *dest);
-void sdb_deserialize_row(void *src, SDBRow *dest);
+void sdb_serialize_row(SDBRow *src, char *dest);
+void sdb_deserialize_row(char *src, SDBRow *dest);
 SDBTable *sdb_open(const char *db_filename);
 void sdb_close(SDBTable *table);
 uint32_t sdb_table_max_rows(void);

@@ -10,14 +10,10 @@ DEPFILES=$(patsubst %,$(OUT)%,$(CFILES:.c=.d))
 ASAN=-fsanitize=address
 #ASAN=
 
-insert id=3 username=name-3 email=email-3
-insert id=2 username=name-2 email=email-2
-insert id=1 username=name-1 email=email-1
-
 -include $(DEPFILES)
 
 DEBUG=-g -DDEBUG
-OPT=-O0
+OPT=-O1
 
 CC=gcc
 CC_WARN=-Wall -Wshadow -Wextra -Werror -Wformat=2 -Wpedantic -fmax-errors=10 -Wno-unknown-pragmas
