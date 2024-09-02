@@ -37,7 +37,7 @@ SDBTable *sdb_open(const char *db_filename) {
     table->root_page_num = 0;
 
     if (pager->num_pages == 0) {
-        SDBLeafNode *root_node = sdb_get_page(pager, 0);
+        SDBLeafNode *root_node = sdb_pager_get_page(pager, 0);
         root_node->common_header.type = SDB_LEAF_NODE | SDB_ROOT_NODE;
         root_node->leaf_header.num_cells = 0;
     }

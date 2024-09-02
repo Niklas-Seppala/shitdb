@@ -3,8 +3,8 @@
 #include <assert.h>
 #include <string.h>
 #include "utils.h"
-#include "trees.h"
 #include "pager.h"
+#include "statement.h"
 
 #define META_PREFIX   '.'
 #define CMD_EXIT      ".exit"
@@ -37,7 +37,7 @@ void sdb_meta_handle_command(SDBInputBuffer *input, SDBTable *table) {
         exit(EXIT_SUCCESS);
     case BTREE:
         printf("Tree:\n");
-        print_leaf_node(sdb_get_page(table->pager, 0));
+        print_tree(table->pager, 0, 0);
         break;
     case CONST:
         printf("Constants:\n");

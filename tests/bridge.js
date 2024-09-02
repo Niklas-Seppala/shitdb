@@ -62,6 +62,7 @@ function executeCommands(commands, file) {
             .filter(it => it.length > 0)
             .filter(it => !it.includes("[CREATE]"))
             .filter(it => !it.includes("[OPEN]"))
+            .filter(it => !it.includes("[ERROR]"))
         );
       }
     });

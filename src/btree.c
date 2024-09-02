@@ -1,17 +1,29 @@
 #include <stdbool.h>
 #include <inttypes.h>
+#include <assert.h>
 #include "trees.h"
 #include "table.h"
 #include "stdio.h"
 
-void print_leaf_node(SDBGenericNode* node) {
-    if (node->type & SDB_LEAF_NODE) {
-        SDBLeafNode * leaf = (SDBLeafNode *)node;
-        uint32_t cells = leaf->leaf_header.num_cells;
-        printf("leaf (size %d)\n", cells);
-        for (uint32_t i = 0; i < cells; i++) {
-            printf("  - %d : %d\n", i, leaf->body.cells[i].key);
-        }
+uint32_t* internal_node_child(SDBInternalNode* node, uint32_t child_num) {
+    uint32_t num_keys = node->header.num_keys;
+    assert(child_num <= num_keys && "Tried to access child out of bounds");
+     if (child_num == num_keys) {
+        return &node->header.right_child;
+    } else {
+        return &node->children[child_num].child;
+    }
+}
+
+uint32_t get_node_max_key(SDBGenericNode* node) {
+    if (node->type & SDB_INTERNAL_NODE) {
+        SDBInternalNode *parent = (SDBInternalNode *)node;
+        return parent->children[parent->header.num_keys-1].key;
+    } else if (node->type & SDB_LEAF_NODE) {
+        SDBLeafNode *leaf = (SDBLeafNode *)node;
+        return leaf->body.cells[leaf->leaf_header.num_cells-1].key;
+    } else {
+        assert(false);
     }
 }
 

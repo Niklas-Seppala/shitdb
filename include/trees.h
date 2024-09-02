@@ -2,6 +2,7 @@
 #define SDB_TREES_H
 
 #include "tableconsts.h"
+#include "pager.h"
 
 #define SDB_LEAF_NODE (1 << 0)
 #define SDB_INTERNAL_NODE (1 << 1)
@@ -15,8 +16,9 @@ typedef struct {
 } SDBGenericNode;
 
 typedef struct {
-    SDBGenericNode header;
-} SDBInternalNode;
+    uint32_t num_keys;
+    uint32_t right_child;
+} SDBInternalHeader;
 
 typedef struct {
     uint32_t num_cells;
@@ -30,10 +32,20 @@ typedef struct {
 #define LEAF_NODE_CELL_SIZE ((uint32_t)(sizeof(SDBCell)))
 #define LEAF_NODE_SPACE_FOR_CELLS ((uint32_t)(PAGE_SIZE - ((sizeof(SDBGenericNode) + sizeof(SDBLeafHeader)))))
 #define LEAF_NODE_MAX_CELLS ((uint32_t)(LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE))
+#define LEAF_NODE_RIGHT_SPLIT_COUNT ((LEAF_NODE_MAX_CELLS + 1) / 2)
+#define LEAF_NODE_LEFT_SPLIT_COUNT ((LEAF_NODE_MAX_CELLS + 1) - LEAF_NODE_RIGHT_SPLIT_COUNT)
 
 typedef struct {
     SDBCell cells[LEAF_NODE_MAX_CELLS];
 } SDBLeafBody;
+
+typedef struct {
+    uint32_t key;
+    uint32_t child;
+} SDBNodeKeyChildPair;
+
+#define INTERNAL_NODE_SPACE_FOR_CELLS (PAGE_SIZE - (sizeof(SDBGenericNode) + sizeof(SDBInternalHeader)))
+#define INTERNAL_NODE_MAX_CHILDREN (INTERNAL_NODE_SPACE_FOR_CELLS / sizeof(SDBNodeKeyChildPair))
 
 typedef struct {
     SDBGenericNode common_header;
@@ -41,7 +53,15 @@ typedef struct {
     SDBLeafBody body;
 } SDBLeafNode;
 
-void print_leaf_node(SDBGenericNode* node);
-void print_constants(void);
+typedef struct {
+    SDBGenericNode common_header;
+    SDBInternalHeader header;
+    SDBNodeKeyChildPair children[INTERNAL_NODE_MAX_CHILDREN];
+} SDBInternalNode;
 
+void print_constants(void);
+uint32_t* internal_node_child(SDBInternalNode* node, uint32_t child_num);
+uint32_t get_node_max_key(SDBGenericNode* node);
+
+#define asd sizeof(SDBInternalNode)
 #endif // SDB_TREES_H

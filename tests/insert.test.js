@@ -78,6 +78,30 @@ test(`Insert max sized entry (31 bytes) for username column`, async () => {
     .catch(error => fail(error.message));
 });
 
+test(`Insert duplicate key is rejected`, async () => {
+  const dbPath = getDbPath("insert", "username");
+  const username = "a".repeat(30);
+  const email = "email";
+  const commands = [
+    `insert id=1 username=${username} email=${email}`,
+    `insert id=1 username=name-2 email=email-2`,
+    "select",
+    ".exit"
+  ];
+  await executeCommands(commands, dbPath)
+    .then(output =>
+      output.forEach(json =>
+        parseRow(json, row => {
+          expect(row.id).toBe(1);
+          expect(row.username).toBe(username);
+          expect(row.email).toBe(email);
+        })
+      )
+    )
+    .catch(error => fail(error.message));
+});
+
+
 test(`Insert max sized entry (255 bytes) for email column`, async () => {
   const dbPath = getDbPath("insert", "email");
   const longUsername = "name";

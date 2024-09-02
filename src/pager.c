@@ -36,7 +36,7 @@ SDBPager *sdb_pager_open(const char *filename) {
     return pager;
 }
 
-void *sdb_get_page(SDBPager *pager, uint32_t page_num) {
+void *sdb_pager_get_page(SDBPager *pager, uint32_t page_num) {
     if (page_num > TABLE_MAX_PAGES) {
         printf("Tried to fetch a page %d outside of bounds (%d)\n", page_num, TABLE_MAX_PAGES);
         exit(EXIT_FAILURE);
@@ -67,6 +67,14 @@ void *sdb_get_page(SDBPager *pager, uint32_t page_num) {
     }
 
     return pager->pages[page_num];
+}
+
+/*
+Until we start recycling free pages, new pages will always
+go onto the end of the database file
+*/
+uint32_t sdb_pager_unused_page_num(SDBPager* pager) {
+    return pager->num_pages;
 }
 
 

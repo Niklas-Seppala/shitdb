@@ -7,8 +7,8 @@ DEPFLAGS=-MP -MD
 CFILES=$(foreach D,$(CODEDIRS),$(wildcard $(D)/*.c))
 OBJECTS=$(patsubst %,$(OUT)%,$(CFILES:.c=.o))
 DEPFILES=$(patsubst %,$(OUT)%,$(CFILES:.c=.d))
-ASAN=-fsanitize=address
-#ASAN=
+#ASAN=-fsanitize=address
+ASAN=
 
 -include $(DEPFILES)
 

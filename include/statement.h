@@ -32,6 +32,7 @@ typedef enum {
 
 StatementPrepareStatus sdb_statement_prepare(SDBInputBuffer *buffer, SDBStatement *statement);
 ExecuteResult sdb_statement_execute(SDBStatement *statement, SDBTable *table);
+void print_tree(SDBPager* pager, uint32_t page_num, uint32_t indentation_level);
 
 
 #endif // SDB_STATEMENT_H
