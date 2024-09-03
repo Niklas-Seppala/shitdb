@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include "table.h"
 #include "utils.h"
-#include "trees.h"
+#include "btree.h"
 #include "tableconsts.h"
 
 #define size_of_attribute(Struct, Attribute) sizeof(((Struct*)0)->Attribute)
@@ -39,7 +39,7 @@ SDBTable *sdb_open(const char *db_filename) {
     if (pager->num_pages == 0) {
         SDBLeafNode *root_node = sdb_pager_get_page(pager, 0);
         root_node->common_header.type = SDB_LEAF_NODE | SDB_ROOT_NODE;
-        root_node->leaf_header.num_cells = 0;
+        root_node->num_cells = 0;
     }
 
     return table;

@@ -2,7 +2,7 @@
 #define SDB_PAGER_H
 
 #include <inttypes.h>
-#include "trees.h"
+#include "btree.h"
 
 typedef struct {
     int fd;

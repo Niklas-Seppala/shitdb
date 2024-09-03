@@ -5,7 +5,7 @@
 #include "table.h"
 #include "cursor.h"
 #include <assert.h>
-#include "trees.h"
+#include "btree.h"
 
 // TODO: might be nice to free this at the end :)
 static SDBInputBuffer *input_copy = NULL; 
@@ -28,14 +28,14 @@ static void create_new_root(SDBTable *table, uint32_t right_child_page_num) {
     /* Left child has data copied from old root */
     memcpy(left_child, root, PAGE_SIZE);
     // Clear root bit.
-    ((SDBGenericNode *)left_child)->type &= ~SDB_ROOT_NODE;
+    ((SDBTreeNode *)left_child)->type &= ~SDB_ROOT_NODE;
 
     root->common_header.type = SDB_INTERNAL_NODE | SDB_ROOT_NODE;
-    root->header.num_keys = 1;
+    root->num_keys = 1;
     *internal_node_child(root, 0) = left_child_page_num;
     uint32_t left_child_max_key = get_node_max_key(left_child);
     root->children[0].key = left_child_max_key;
-    root->header.right_child = right_child_page_num;
+    root->right_child = right_child_page_num;
 }
 
  /*
@@ -50,7 +50,7 @@ static void leaf_node_split_and_insert(SDBCursor* cursor, uint32_t key, SDBRow* 
     uint32_t new_page_num = sdb_pager_unused_page_num(cursor->table->pager);
     SDBLeafNode *new_node = sdb_pager_get_page(cursor->table->pager, new_page_num);
     
-    new_node->leaf_header.num_cells = 0;
+    new_node->num_cells = 0;
     new_node->common_header.type = SDB_LEAF_NODE;
 
     /*
@@ -81,23 +81,23 @@ insert id=14 username=a email=a
             dest_node = old_node;
         }
         uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
-        char *cell_addr = (char *)&dest_node->body.cells[index_within_node];
+        char *cell_addr = (char *)&dest_node->cells[index_within_node];
 
         if (i == (int32_t)cursor->cell_num) {
             // Insert the new value
             sdb_serialize_row(value, cell_addr);
-            dest_node->body.cells[index_within_node].key = key;
+            dest_node->cells[index_within_node].key = key;
         } else if (i > (int32_t)cursor->cell_num) {
             // Copy existing cell
-            memcpy(cell_addr, &old_node->body.cells[i-1], LEAF_NODE_CELL_SIZE);
+            memcpy(cell_addr, &old_node->cells[i-1], LEAF_NODE_CELL_SIZE);
         } else {
             // Copy existing value
-            memcpy(cell_addr, &old_node->body.cells[i], LEAF_NODE_CELL_SIZE);
+            memcpy(cell_addr, &old_node->cells[i], LEAF_NODE_CELL_SIZE);
         }
     }
 
-    old_node->leaf_header.num_cells = LEAF_NODE_LEFT_SPLIT_COUNT;
-    new_node->leaf_header.num_cells = LEAF_NODE_RIGHT_SPLIT_COUNT;
+    old_node->num_cells = LEAF_NODE_LEFT_SPLIT_COUNT;
+    new_node->num_cells = LEAF_NODE_RIGHT_SPLIT_COUNT;
 
     if (old_node->common_header.type & SDB_ROOT_NODE) {
         // TODO: return create_new_root(cursor->table, new_page_num);
@@ -110,11 +110,11 @@ insert id=14 username=a email=a
 }
 
 void leaf_node_insert(SDBCursor* cursor, uint32_t key, SDBRow* value) {
-    SDBGenericNode* page = sdb_pager_get_page(cursor->table->pager, cursor->page_num);
+    SDBTreeNode* page = sdb_pager_get_page(cursor->table->pager, cursor->page_num);
     assert(page->type & SDB_LEAF_NODE && "Only feal nodes for now");
     SDBLeafNode *node = (SDBLeafNode*) page;
 
-    uint32_t num_cells = node->leaf_header.num_cells;
+    uint32_t num_cells = node->num_cells;
     if (num_cells >= LEAF_NODE_MAX_CELLS) {
         // Node full
         leaf_node_split_and_insert(cursor, key, value);
@@ -124,13 +124,13 @@ void leaf_node_insert(SDBCursor* cursor, uint32_t key, SDBRow* value) {
     if (cursor->cell_num < num_cells) {
         // Make room for new cell
         for (uint32_t i = num_cells; i > cursor->cell_num; i--) {
-            memcpy(&node->body.cells[i], &node->body.cells[i-1], LEAF_NODE_CELL_SIZE);
+            memcpy(&node->cells[i], &node->cells[i-1], LEAF_NODE_CELL_SIZE);
         }
     }
 
-    node->leaf_header.num_cells++;
-    node->body.cells[cursor->cell_num].key = key;
-    char *dest = node->body.cells[cursor->cell_num].value;
+    node->num_cells++;
+    node->cells[cursor->cell_num].key = key;
+    char *dest = node->cells[cursor->cell_num].value;
     sdb_serialize_row(value, dest);
 }
 
@@ -162,11 +162,11 @@ StatementPrepareStatus sdb_statement_prepare(SDBInputBuffer *input, SDBStatement
 }
 
 ExecuteResult sdb_insert_execute(SDBStatement *statement, SDBTable *table) {
-    SDBGenericNode* page = sdb_pager_get_page(table->pager, table->root_page_num);
+    SDBTreeNode* page = sdb_pager_get_page(table->pager, table->root_page_num);
     assert(page->type & SDB_LEAF_NODE);
     SDBLeafNode *node = (SDBLeafNode *)page;
 
-    uint32_t num_cells = node->leaf_header.num_cells;
+    uint32_t num_cells = node->num_cells;
 
     SDBRow row_to_insert;
     sdb_row_from_statement(&statement->tokenized, &row_to_insert);
@@ -176,7 +176,7 @@ ExecuteResult sdb_insert_execute(SDBStatement *statement, SDBTable *table) {
     sdb_cursor_find(&cursor, table, key);
 
     if (cursor.cell_num < num_cells) {
-        uint32_t key_at = node->body.cells[cursor.cell_num].key;
+        uint32_t key_at = node->cells[cursor.cell_num].key;
         if (key_at == key) {
             return EXECUTE_DUP_KEY;
         }
@@ -223,23 +223,23 @@ void indent(uint32_t level) {
 }
 
 void print_tree(SDBPager* pager, uint32_t page_num, uint32_t indentation_level) {
-    SDBGenericNode* node = sdb_pager_get_page(pager, page_num);
+    SDBTreeNode* node = sdb_pager_get_page(pager, page_num);
     uint32_t num_keys, child;
 
     if (node->type & SDB_LEAF_NODE) {
         SDBLeafNode *leaf = (SDBLeafNode *)node;
-        num_keys = leaf->leaf_header.num_cells;
+        num_keys = leaf->num_cells;
         indent(indentation_level);
         printf("- leaf (size %d)\n", num_keys);
         for (uint32_t i = 0; i < num_keys; i++) {
             indent(indentation_level + 1);
-            printf("- %d\n", leaf->body.cells[i].key);
+            printf("- %d\n", leaf->cells[i].key);
         }
     }
 
     if (node->type & SDB_INTERNAL_NODE) {
         SDBInternalNode *parent = (SDBInternalNode *)node;
-        num_keys = parent->header.num_keys;
+        num_keys = parent->num_keys;
         indent(indentation_level);
         printf("- internal (size %d)\n", num_keys);
         for (uint32_t i = 0; i < num_keys; i++) {
@@ -248,7 +248,7 @@ void print_tree(SDBPager* pager, uint32_t page_num, uint32_t indentation_level) 
             indent(indentation_level + 1);
             printf("- key %d\n", parent->children[i].key);
         }
-        child = parent->header.right_child;
+        child = parent->right_child;
         print_tree(pager, child, indentation_level + 1);
     }
 }
