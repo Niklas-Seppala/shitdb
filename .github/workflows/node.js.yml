@@ -1,4 +1,4 @@
-name: Run Node.js Tests
+name: Integration tests
 
 on: [push, pull_request]  # Triggers the workflow on push or pull request events
 
