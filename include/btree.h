@@ -21,11 +21,19 @@
 #define INTERNAL_NODE_SPACE_FOR_CELLS (PAGE_SIZE - (LEAF_NODE_CELL_SIZE + INTERNAL_NODE_HEADER_SIZE))
 #define INTERNAL_NODE_MAX_CHILDREN (INTERNAL_NODE_SPACE_FOR_CELLS / sizeof(SDBNodeKeyChildPair))
 
+/**
+ * @brief A cell of a leaf node, holding a table row,
+ *        identifiable by it's key.
+ */
 typedef struct {
     uint32_t key;
     char value[ROW_SIZE];
 } SDBCell;
 
+/**
+ * @brief TODO:
+ * 
+ */
 typedef struct {
     uint32_t key;
     uint32_t child;
@@ -94,6 +102,4 @@ void print_constants(void);
 uint32_t* internal_node_child(SDBTreeNode* node, uint32_t child_num);
 uint32_t get_node_max_key(SDBTreeNode* node);
 
-
-#define asd sizeof(SDBInternalNode)
 #endif // SDB_TREES_H
