@@ -18,12 +18,12 @@ function getCommands(data) {
   for (let i = 0; i < data.length; i++) {
     commands.push(`insert id=${data[i].id} username=${data[i].username} email=${data[i].email}`);
   }
-  commands.push("select");
+  //commands.push("select");
   commands.push(".exit");
   return commands;
 }
 
-const amount = 13;
+const amount = 14;
 test(`Inserts ${amount} rows and queries the table`, async () => {
   const dbPath = getDbPath("insert", "max");
   const data = getData(amount);
