@@ -3,19 +3,18 @@
 #include "btree.h"
 #include <stdio.h>
 
-
 void sdb_cursor_start(SDBCursor *cursor, SDBTable *table) {
     cursor->table = table;
     cursor->page_num = table->root_page_num;
     cursor->cell_num = 0;
 
-    SDBTreeGenericNode *root_node = sdb_pager_get_page(table->pager, table->root_page_num);
+    SDBTreeNode *root_node = sdb_pager_get_page(table->pager, table->root_page_num);
     assert(root_node->type & SDB_LEAF_NODE && "Only leaf node for now");
     cursor->end_of_table = (root_node->body.leaf.num_cells == 0);
 }
 
 static void leaf_node_find(SDBCursor *cursor, SDBTable* table, uint32_t page_num, uint32_t key) {
-    SDBTreeGenericNode *node = sdb_pager_get_page(table->pager, page_num);
+    SDBTreeNode *node = sdb_pager_get_page(table->pager, page_num);
 
     assert(node->type & SDB_LEAF_NODE && "Only leaf node for now");
 
@@ -50,7 +49,7 @@ where it should be inserted
 */
 void sdb_cursor_find(SDBCursor *cursor, SDBTable* table, uint32_t key) {
     uint32_t root_page_num = table->root_page_num;
-    SDBTreeGenericNode* root_node = sdb_pager_get_page(table->pager, root_page_num);
+    SDBTreeNode* root_node = sdb_pager_get_page(table->pager, root_page_num);
 
     if (root_node->type & SDB_LEAF_NODE) {
         leaf_node_find(cursor, table, root_page_num, key);
@@ -62,7 +61,7 @@ void sdb_cursor_find(SDBCursor *cursor, SDBTable* table, uint32_t key) {
 
 char *sdb_cursor_value(SDBCursor *cursor) {
     uint32_t page_num = cursor->page_num;
-    SDBTreeGenericNode *page = sdb_pager_get_page(cursor->table->pager, page_num);
+    SDBTreeNode *page = sdb_pager_get_page(cursor->table->pager, page_num);
 
     assert(page->type & SDB_LEAF_NODE && "Only leaf nodes for now");
     return page->body.leaf.cells[cursor->cell_num].value;
@@ -70,7 +69,7 @@ char *sdb_cursor_value(SDBCursor *cursor) {
 
 void sdb_cursor_advance(SDBCursor *cursor) {
     uint32_t page_num = cursor->page_num;
-    SDBTreeGenericNode *page = sdb_pager_get_page(cursor->table->pager, page_num);
+    SDBTreeNode *page = sdb_pager_get_page(cursor->table->pager, page_num);
     assert(page->type & SDB_LEAF_NODE && "Only leaf nodes for now");
 
     assert(cursor->cell_num <= page->body.leaf.num_cells && "Skipping cell");

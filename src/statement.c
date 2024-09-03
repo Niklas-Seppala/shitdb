@@ -19,11 +19,11 @@ static void create_new_root(SDBTable *table, uint32_t right_child_page_num) {
     New root node points to two children.
     */
 
-    SDBTreeGenericNode *root = sdb_pager_get_page(table->pager, table->root_page_num);
+    SDBTreeNode *root = sdb_pager_get_page(table->pager, table->root_page_num);
     void *right_child = sdb_pager_get_page(table->pager, right_child_page_num);
     UNUSED(right_child);
     uint32_t left_child_page_num = sdb_pager_unused_page_num(table->pager);
-    SDBTreeGenericNode *left_child = sdb_pager_get_page(table->pager, left_child_page_num);
+    SDBTreeNode *left_child = sdb_pager_get_page(table->pager, left_child_page_num);
 
     /* Left child has data copied from old root */
     memcpy(left_child, root, PAGE_SIZE);
@@ -45,10 +45,10 @@ static void create_new_root(SDBTable *table, uint32_t right_child_page_num) {
  */
 static void leaf_node_split_and_insert(SDBCursor* cursor, uint32_t key, SDBRow* value) {
     UNUSED(key); // TODO
-    SDBTreeGenericNode *old_node = sdb_pager_get_page(cursor->table->pager, cursor->page_num);
+    SDBTreeNode *old_node = sdb_pager_get_page(cursor->table->pager, cursor->page_num);
     
     uint32_t new_page_num = sdb_pager_unused_page_num(cursor->table->pager);
-    SDBTreeGenericNode *new_node = sdb_pager_get_page(cursor->table->pager, new_page_num);
+    SDBTreeNode *new_node = sdb_pager_get_page(cursor->table->pager, new_page_num);
     new_node->body.leaf.num_cells = 0;
     new_node->type = SDB_LEAF_NODE;
     /*
@@ -72,7 +72,7 @@ insert id=14 username=a email=a
     Starting from the right, move each key to correct position.
     */
     for (int32_t i = LEAF_NODE_MAX_CELLS; i >= 0; i--) {
-        SDBTreeGenericNode *dest_node;
+        SDBTreeNode *dest_node;
         if (i >= (int32_t)LEAF_NODE_LEFT_SPLIT_COUNT) {
             dest_node = new_node;
         } else {
@@ -108,7 +108,7 @@ insert id=14 username=a email=a
 }
 
 void leaf_node_insert(SDBCursor* cursor, uint32_t key, SDBRow* value) {
-    SDBTreeGenericNode* page = sdb_pager_get_page(cursor->table->pager, cursor->page_num);
+    SDBTreeNode* page = sdb_pager_get_page(cursor->table->pager, cursor->page_num);
     assert(page->type & SDB_LEAF_NODE && "Only feal nodes for now");
 
     uint32_t num_cells = page->body.leaf.num_cells;
@@ -159,7 +159,7 @@ StatementPrepareStatus sdb_statement_prepare(SDBInputBuffer *input, SDBStatement
 }
 
 ExecuteResult sdb_insert_execute(SDBStatement *statement, SDBTable *table) {
-    SDBTreeGenericNode* page = sdb_pager_get_page(table->pager, table->root_page_num);
+    SDBTreeNode* page = sdb_pager_get_page(table->pager, table->root_page_num);
     assert(page->type & SDB_LEAF_NODE);
 
     SDBRow row_to_insert;
@@ -217,7 +217,7 @@ void indent(uint32_t level) {
 }
 
 void print_tree(SDBPager* pager, uint32_t page_num, uint32_t indentation_level) {
-    SDBTreeGenericNode* node = sdb_pager_get_page(pager, page_num);
+    SDBTreeNode* node = sdb_pager_get_page(pager, page_num);
     uint32_t num_keys, child;
 
     if (node->type & SDB_LEAF_NODE) {

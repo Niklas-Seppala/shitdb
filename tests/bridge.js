@@ -51,7 +51,10 @@ function executeCommands(commands, file) {
     // Resolve when the process exits and all output has been read
     child.on("close", code => {
       if (code !== 0) {
+        console.error("---------- error ----------")
         console.error(rawError)
+        console.log("---------- OUTPUT ----------")
+        console.log(rawOutput);
         reject(new Error(`Process exited with code ${code}`));
       } else {
         resolve(
