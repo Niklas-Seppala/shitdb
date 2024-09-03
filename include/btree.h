@@ -47,7 +47,10 @@ typedef struct {
  * 
  */
 typedef struct {
+    // --------------------------------
+    // Common header
     // NOTE: Header size size is likely to grow in the future
+    // --------------------------------
 
     // Type of this node, either leaf (0x1) or internal (0x2).
     // 3rd bit (0x4) is root flag
@@ -59,7 +62,9 @@ typedef struct {
     // Both leaf and internal nodes make use of all the
     // available page. (PAGE_SIZE - 40 bits)
     union SDBNodeBody {
-        // Internal node body
+        // --------------------------------
+        // Internal-node body
+        // --------------------------------
         struct {
             // Number of current keys stored in this internal node.
             // For the max amount of cells that can be stored,
@@ -69,7 +74,10 @@ typedef struct {
             uint32_t right_child;
             SDBNodeKeyChildPair children[INTERNAL_NODE_MAX_CHILDREN];
         } internal;
-        // Leaf node body
+
+        // --------------------------------
+        // Leaf-node body
+        // --------------------------------
         struct {
             // Number of current occupied cells. For the max amount
             // of cells that can be stored, see LEAF_NODE_MAX_CELLS
