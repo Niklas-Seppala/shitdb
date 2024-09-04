@@ -51,6 +51,11 @@ static void leaf_node_split_and_insert(SDBCursor* cursor, uint32_t key, SDBRow* 
     SDBTreeNode *new_node = sdb_pager_get_page(cursor->table->pager, new_page_num);
     new_node->body.leaf.num_cells = 0;
     new_node->type = SDB_LEAF_NODE;
+    new_node->body.leaf.sibling = 0;
+
+    new_node->body.leaf.sibling = old_node->body.leaf.sibling;
+    old_node->body.leaf.sibling = new_page_num;
+
     /*
 insert id=1 username=a email=a
 insert id=2 username=a email=a
@@ -66,6 +71,9 @@ insert id=11 username=a email=a
 insert id=12 username=a email=a
 insert id=13 username=a email=a
 insert id=14 username=a email=a
+insert id=15 username=a email=a
+insert id=16 username=a email=a
+insert id=0 username=a email=a
 
     All existing keys plus new key should be divided
     evenly between old (left) and new (right) nodes.
@@ -79,18 +87,18 @@ insert id=14 username=a email=a
             dest_node = old_node;
         }
         uint32_t index_within_node = i % LEAF_NODE_LEFT_SPLIT_COUNT;
-        char *cell_addr = (char *)&dest_node->body.leaf.cells[index_within_node];
+        //char *cell_addr = (char *)&dest_node->body.leaf.cells[index_within_node].value;
 
         if (i == (int32_t)cursor->cell_num) {
             // Insert the new value
-            sdb_serialize_row(value, cell_addr);
+            sdb_serialize_row(value, (char *)&dest_node->body.leaf.cells[index_within_node].value);
             dest_node->body.leaf.cells[index_within_node].key = key;
         } else if (i > (int32_t)cursor->cell_num) {
             // Copy existing cell
-            memcpy(cell_addr, &old_node->body.leaf.cells[i-1], LEAF_NODE_CELL_SIZE);
+            memcpy((char *)&dest_node->body.leaf.cells[index_within_node], &old_node->body.leaf.cells[i-1], LEAF_NODE_CELL_SIZE);
         } else {
             // Copy existing value
-            memcpy(cell_addr, &old_node->body.leaf.cells[i], LEAF_NODE_CELL_SIZE);
+            memcpy((char *)&dest_node->body.leaf.cells[index_within_node], &old_node->body.leaf.cells[i], LEAF_NODE_CELL_SIZE);
         }
     }
 
@@ -160,7 +168,7 @@ StatementPrepareStatus sdb_statement_prepare(SDBInputBuffer *input, SDBStatement
 
 ExecuteResult sdb_insert_execute(SDBStatement *statement, SDBTable *table) {
     SDBTreeNode* page = sdb_pager_get_page(table->pager, table->root_page_num);
-    assert(page->type & SDB_LEAF_NODE);
+    //assert(page->type & SDB_LEAF_NODE);
 
     SDBRow row_to_insert;
     sdb_row_from_statement(&statement->tokenized, &row_to_insert);

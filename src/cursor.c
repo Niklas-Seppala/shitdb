@@ -4,13 +4,18 @@
 #include <stdio.h>
 
 void sdb_cursor_start(SDBCursor *cursor, SDBTable *table) {
+    /*
     cursor->table = table;
     cursor->page_num = table->root_page_num;
     cursor->cell_num = 0;
 
     SDBTreeNode *root_node = sdb_pager_get_page(table->pager, table->root_page_num);
-    //assert(root_node->type & SDB_LEAF_NODE && "Only leaf node for now");
     cursor->end_of_table = (root_node->body.leaf.num_cells == 0);
+
+    */
+    sdb_cursor_find(cursor, table, 0);
+    SDBTreeNode *node = sdb_pager_get_page(table->pager, cursor->page_num);
+    cursor->end_of_table = (node->body.leaf.num_cells == 0);
 }
 
 
@@ -55,7 +60,7 @@ static void internal_node_find(SDBCursor *cursor, SDBTable *table, uint32_t page
     cursor->page_num = page_num;
 
     SDBTreeNode *node = sdb_pager_get_page(table->pager, page_num);
-    assert(node->type & SDB_LEAF_NODE && "Non-internal node in internal_node_find()");
+    assert(node->type & SDB_INTERNAL_NODE && "Non-internal node in internal_node_find()");
     
     // Bunary search to find index of the child to search
     uint32_t min_index = 0;
@@ -114,6 +119,13 @@ void sdb_cursor_advance(SDBCursor *cursor) {
     assert(cursor->cell_num <= page->body.leaf.num_cells && "Skipping cell");
     cursor->cell_num++;
     if (cursor->cell_num >= page->body.leaf.num_cells) {
-        cursor->end_of_table = true;
+        //cursor->end_of_table = true;
+        // Advance to next leaf
+        if (page->body.leaf.sibling == 0) {
+            cursor->end_of_table = true;
+        } else {
+            cursor->page_num = page->body.leaf.sibling;
+            cursor->cell_num = 0;
+        }
     }
 }

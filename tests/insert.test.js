@@ -23,7 +23,7 @@ function getCommands(data) {
   return commands;
 }
 
-const amount = 14;
+const amount = 15;
 test(`Inserts ${amount} rows and queries the table`, async () => {
   const dbPath = getDbPath("insert", "max");
   const data = getData(amount);
