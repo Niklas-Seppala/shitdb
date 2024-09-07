@@ -10,6 +10,111 @@ static const char *ASSIGN     = "=";
 static const char *INSERT_STR = "INSERT";
 static const char *SELECT_STR = "SELECT";
 
+static const uint32_t START_TOKEN_MASK = 0x1;
+static const uint32_t KEY_VALUE_TOKEN_MASK = 0x2;
+enum SDBTokenType {
+    SELECT  = 0x11,
+    INSERT  = 0x21,  
+    DELETE  = 0x31,
+    UPDATE  = 0x41,
+    CREATE  = 0x51,
+
+    KEY       = 0x12,
+    ASSIGN    = 0x22,
+    VALUE     = 0x32,
+
+    INVALID = 0
+};
+
+static enum SDBTokenType recognize_token(const char *token) {
+    if (strcasecmp(token, "INSERT") == EQ) {
+        return INSERT;
+    }
+    if (strcasecmp(token, "SELECT") == EQ) {
+        return SELECT;
+    }
+    return INVALID;
+}
+
+typedef struct SDBToken {
+    char *value;
+    struct SDBToken *next;
+    struct SDBToken *prev;
+    struct SDBToken *child;
+    uint32_t position;
+    enum SDBTokenType type;
+} SDBToken;
+
+typedef struct {
+    char *str;
+    char *original;
+    size_t input_len;
+    SDBToken *root;
+} SDBTokStatement;
+
+
+static void __tokenize(SDBTokStatement *statement, SDBToken *old_token, char **save_ptr) {
+    char *str = statement->str;
+    char *raw_token;
+    if (*save_ptr == NULL) {
+        // This is first token
+        raw_token = __strtok_r(str, SPACE, save_ptr);
+    } else {
+        raw_token = __strtok_r(NULL, SPACE, save_ptr);
+    }
+
+    if (raw_token == NULL) {
+        // No more tokens.
+        return;
+    }
+
+    enum SDBTokenType type = recognize_token(raw_token);
+    if (type == INVALID_TOKEN) {
+        return;
+    }
+
+    SDBToken *new_token;
+    if (statement->root == NULL) {
+        // No previous token, expect start token
+        if (!(type & START_TOKEN_MASK)) {
+            return; // SHIT
+        }
+
+        new_token = calloc(1, sizeof(SDBToken));
+        statement->root = new_token;
+        new_token->position = 0;
+        new_token->value = raw_token;
+    } else if (old_token->type & START_TOKEN_MASK) {
+        // previous token was start
+
+        // TODO Maybe match for start tokens here
+        // and branch out
+    }
+
+    if (old_token != NULL) {
+        assert(new_token != NULL);
+        old_token->next = new_token;
+        new_token->prev = old_token;
+    }
+    __tokenize(statement, new_token, save_ptr);
+}
+
+SDBTokStatement *parse(SDBInputBuffer *buffer) {
+    assert(buffer != NULL);
+    SDBTokStatement *tokenized_statement = calloc(1, sizeof(SDBTokStatement));
+    // Take a copy of the input buffer, tokenization will
+    // be destructive.
+    tokenized_statement->input_len = buffer->input_len;
+    tokenized_statement->str = calloc(tokenized_statement->input_len, sizeof(char));
+    tokenized_statement->original = buffer->buffer;
+    strncpy(tokenized_statement->str, buffer->buffer, buffer->input_len);
+    
+    char *save_ptr = NULL;
+    __tokenize(tokenized_statement, NULL, &save_ptr);
+
+    return tokenized_statement;
+}
+
 static SDBOperationToken tokenize_keywork(SDBInputBuffer *input) {
     const char *keyword = strtok(input->buffer, SPACE);
     if (strcasecmp(keyword, INSERT_STR) == EQ) {
