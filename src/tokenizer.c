@@ -5,13 +5,13 @@
 #include <stdbool.h>
 #include "utils.h"
 
-static const char *SPACE      = " ";
-static const char *ASSIGN     = "=";
+static const char *SPACE_STR      = " ";
+static const char *ASSIGN_STR     = "=";
 static const char *INSERT_STR = "INSERT";
 static const char *SELECT_STR = "SELECT";
 
 static const uint32_t START_TOKEN_MASK = 0x1;
-static const uint32_t KEY_VALUE_TOKEN_MASK = 0x2;
+//static const uint32_t KEY_VALUE_TOKEN_MASK = 0x2;
 enum SDBTokenType {
     SELECT  = 0x11,
     INSERT  = 0x21,  
@@ -58,9 +58,9 @@ static void __tokenize(SDBTokStatement *statement, SDBToken *old_token, char **s
     char *raw_token;
     if (*save_ptr == NULL) {
         // This is first token
-        raw_token = __strtok_r(str, SPACE, save_ptr);
+        raw_token = __strtok_r(str, SPACE_STR, save_ptr);
     } else {
-        raw_token = __strtok_r(NULL, SPACE, save_ptr);
+        raw_token = __strtok_r(NULL, SPACE_STR, save_ptr);
     }
 
     if (raw_token == NULL) {
@@ -69,11 +69,11 @@ static void __tokenize(SDBTokStatement *statement, SDBToken *old_token, char **s
     }
 
     enum SDBTokenType type = recognize_token(raw_token);
-    if (type == INVALID_TOKEN) {
+    if (type == INVALID) {
         return;
     }
 
-    SDBToken *new_token;
+    SDBToken *new_token = NULL;
     if (statement->root == NULL) {
         // No previous token, expect start token
         if (!(type & START_TOKEN_MASK)) {
@@ -116,7 +116,7 @@ SDBTokStatement *parse(SDBInputBuffer *buffer) {
 }
 
 static SDBOperationToken tokenize_keywork(SDBInputBuffer *input) {
-    const char *keyword = strtok(input->buffer, SPACE);
+    const char *keyword = strtok(input->buffer, SPACE_STR);
     if (strcasecmp(keyword, INSERT_STR) == EQ) {
         return INSERT_TOKEN;
     }
@@ -149,11 +149,11 @@ static SDBTokenizationResult tokenize_insert(SDBTokenizedStatement *out) {
 
     char *token = NULL;
     uint32_t count = 0;
-    while ((token = strtok(NULL, SPACE)) != NULL) {
+    while ((token = strtok(NULL, SPACE_STR)) != NULL) {
          char *left;
         const char *right;
         int32_t split_index;
-        if ((split_index = get_index_of_char(token, *ASSIGN)) == -1) {
+        if ((split_index = get_index_of_char(token, *ASSIGN_STR)) == -1) {
             // TODO: LOG
             return TOKENIZATION_FAILURE;
         }
